@@ -1,67 +1,62 @@
-'''
-用梯度下降的优化方法来快速解决线性回归问题
-'''
 
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
-# 构建数据
-points_num = 100
-vectors = []
-# 用 Numpy 的正态随机分布函数生成 100 个点
-# 这些点的（x, y）坐标值对应线性方程 y = 0.1 * x + 0.2
-# 权重（Weight）为 0.1，偏差（Bias）为 0.2
-for i in range(points_num):
-    x1 = np.random.normal(0.0, 0.66)
-    y1 = 0.1 * x1 + 0.2 + np.random.normal(0.0, 0.04)
-    vectors.append([x1, y1])
+# 创建输入数据
+x = np.linspace(-7, 7, 180) # (-7, 7) 之间等间隔的 180 个点
 
-x_data = [v[0] for v in vectors] # 真实的点的 x 坐标
-y_data = [v[1] for v in vectors] # 真实的点的 y 坐标
+# 激活函数的原始实现
+def sigmoid(inputs):
+    y = [1 / float(1 + np.exp(-x)) for x in inputs]
+    return y
 
-# 图像 1 ：展示 100 个随机数据点
-plt.plot(x_data, y_data, 'r*', label="Original data") # 红色星形的点
-plt.title("Linear Regression using Gradient Descent")
-plt.legend()
-plt.show()
+def relu(inputs):
+    y = [x * (x > 0) for x in inputs]
+    return y
 
-# 构建线性回归模型
-W = tf.Variable(tf.random_uniform([1], -1.0, 1.0)) # 初始化 Weight
-b = tf.Variable(tf.zeros([1]))                     # 初始化 Bias
-y = W * x_data + b                                 # 模型计算出来的 y
+def tanh(inputs):
+    y = [(np.exp(x) - np.exp(-x)) / float(np.exp(x) - np.exp(-x)) for x in inputs]
+    return y
 
-# 定义 loss function（损失函数）或 cost function（代价函数）
-# 对 Tensor 的所有维度计算 ((y - y_data) ^ 2) 之和 / N
-loss = tf.reduce_mean(tf.square(y - y_data))
+def softplus(inputs):
+    y = [np.log(1 + np.exp(x)) for x in inputs]
+    return y
 
-# 用梯度下降的优化器来优化我们的 loss functioin
-optimizer = tf.train.GradientDescentOptimizer(0.5) # 设置学习率为 0.5
-train = optimizer.minimize(loss)
+# 经过 TensorFlow 的激活函数处理的各个 Y 值
+y_sigmoid = tf.nn.sigmoid(x)
+y_relu = tf.nn.relu(x)
+y_tanh = tf.nn.tanh(x)
+y_softplus = tf.nn.softplus(x)
 
 # 创建会话
 sess = tf.Session()
 
-# 初始化数据流图中的所有变量
-init = tf.global_variables_initializer()
-sess.run(init)
+# 运行
+y_sigmoid, y_relu, y_tanh, y_softplus = sess.run([y_sigmoid, y_relu, y_tanh, y_softplus])
 
-# 训练 20 步
-for step in range(200):
-    # 优化每一步
-    sess.run(train)
-    # 打印出每一步的损失，权重和偏差
-    print(("Step=%d, Loss=%f, [Weight=%f Bias=%f]") \
-            % (step, sess.run(loss), sess.run(W), sess.run(b)))
+# 创建各个激活函数的图像
+plt.figure(1, figsize=(8, 6))
 
-# 图像 2 ：绘制所有的点并且绘制出最佳拟合的直线
-plt.plot(x_data, y_data, 'r*', label="Original data") # 红色星形的点
-plt.title("Linear Regression using Gradient Descent")
-plt.plot(x_data, sess.run(W) * x_data + sess.run(b), label="Fitted line") # 拟合的线
-plt.legend()
-plt.xlabel('x')
-plt.ylabel('y')
+plt.subplot(221)
+plt.plot(x, y_sigmoid, c='red', label='Sigmoid')
+plt.ylim((-0.2, 1.2))
+plt.legend(loc='best')
+
+plt.subplot(222)
+plt.plot(x, y_relu, c='red', label='Relu')
+plt.ylim((-1, 6))
+plt.legend(loc='best')
+
+plt.subplot(223)
+plt.plot(x, y_tanh, c='red', label='Tanh')
+plt.ylim((-1.3, 1.3))
+plt.legend(loc='best')
+
+plt.subplot(224)
+plt.plot(x, y_softplus, c='red', label='Softplus')
+plt.ylim((-1, 6))
+plt.legend(loc='best')
+
+# 显示图像
 plt.show()
-
-# 关闭会话
-sess.close()
